@@ -152,9 +152,9 @@
                         PFObject *objectForParse = [PFObject objectWithClassName:@"note"];
                         objectForParse[@"title"] = objectFromCoreData.title;
                         objectForParse[@"content"] = objectFromCoreData.content;
-                        objectForParse[@"createDate"] = objectFromCoreData.date valueForKey:@"date"];
+                        objectForParse[@"createDate"] = objectFromCoreData.date;
                         objectForParse[@"updateDate"] = objectFromCoreData.updateDate ;
-                        NSData *data = [self getImageFromDocumentsWithName:[self makeStringFromDate:[objectFromCoreData valueForKey:@"date"]]];
+                        NSData *data = [self getImageFromDocumentsWithName:[self makeStringFromDate:objectFromCoreData.date]];
                         PFFile *file = [PFFile fileWithName:@"image.png" data:data];
                         [file saveInBackground];
                         objectForParse[@"image"] = file;
@@ -224,25 +224,17 @@
                                 withCreateDate: (NSDate *) createDate
                                 withUpdateDate: (NSDate *) updateDate
 {
-    NSManagedObject *newNote;
-    newNote = [NSEntityDescription
-               insertNewObjectForEntityForName:@"Event"
-               inManagedObjectContext:self.managedObjectContext];
-    [newNote setValue:title forKey:@"title"];
-    [newNote setValue:content forKey:@"content"];
-    [newNote setValue:createDate forKey:@"date"];
-    [newNote setValue:updateDate forKey:@"updateDate"];
-    [newNote setValue:@"notdelete" forKey:@"deleteNote"];
-    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
-    
-    // Convert to new Date Format
-    [dateFormatter setDateFormat:@"yyyyMMddHHmmss"];
-    NSString *newDate = [dateFormatter stringFromDate:createDate];
+    Event *newNote;
+    newNote.title = title;
+    newNote.content = content;
+    newNote.date = createDate;
+    newNote.updateDate = updateDate;
+    newNote.deleteNote = @"notdelete";
     NSError *error = nil;
     [self.managedObjectContext save:&error];
     dispatch_async(dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
         if (image) {
-            [image writeToFile:[self documentsPathForFileName:newDate] atomically:YES];
+            [image writeToFile:[self documentsPathForFileName:[self makeStringFromDate:createDate]] atomically:YES];
         }
     });
     
@@ -250,26 +242,18 @@
 
 -(void)addNewObjectToContextWithTitle:(NSString *)title withContent:(NSString *)content withImage:(NSData *) image
 {
-    NSManagedObject *newNote;
-    newNote = [NSEntityDescription
-               insertNewObjectForEntityForName:@"Event"
-               inManagedObjectContext:self.managedObjectContext];
-    [newNote setValue:title forKey:@"title"];
-    [newNote setValue:content forKey:@"content"];
-    [newNote setValue:[NSDate date] forKey:@"date"];
-    [newNote setValue:[NSDate date] forKey:@"updateDate"];
-    [newNote setValue:@"notdelete" forKey:@"deleteNote"];
-    //[newNote setValue:@YES forKey:@"deleted"];
-    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+    Event *newNote;
+    newNote.title = title;
+    newNote.content = content;
+    newNote.date = [NSDate date];
+    newNote.updateDate = [NSDate date];
+    newNote.deleteNote = @"notdelete";
 
-    // Convert to new Date Format
-    [dateFormatter setDateFormat:@"yyyyMMddHHmmss"];
-    NSString *newDate = [dateFormatter stringFromDate:[NSDate date]];
     NSError *error = nil;
     [self.managedObjectContext save:&error];
     dispatch_async(dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
         if (image) {
-            [image writeToFile:[self documentsPathForFileName:newDate] atomically:YES];
+            [image writeToFile:[self documentsPathForFileName:[self makeStringFromDate:[NSDate date]]] atomically:YES];
         }
     });
 }
